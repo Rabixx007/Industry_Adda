@@ -1,31 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { projects } from '../data/dummy';
 
 function TinderMatch({ user }) {
+  const [candidates, setCandidates] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [swipeDirection, setSwipeDirection] = useState(null);
   const [matches, setMatches] = useState([]);
 
-  // Filter out user's own projects
-  const availableProjects = projects.filter(p => p.user_id !== user.id);
+  useEffect(() => {
+    fetch('/api/search?q=a', { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => setCandidates((data.users || []).filter(u => u.id !== user.id)))
+      .catch(() => { });
+  }, []);
 
-  const currentProject = availableProjects[currentIndex];
+  const currentCandidate = candidates[currentIndex];
 
-  const handleSwipe = (direction) => {
+  const handleSwipe = async (direction) => {
     setSwipeDirection(direction);
-    
-    if (direction === 'right' && currentProject) {
-      // It's a match!
-      setMatches([...matches, currentProject]);
-      setTimeout(() => {
-        alert(`🎉 It's a Match! You liked "${currentProject.title}". Check your messages to connect!`);
-      }, 300);
+    if (direction === 'right' && currentCandidate) {
+      const res = await fetch('/api/match/swipe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ targetId: currentCandidate.id, direction: 'right' })
+      });
+      const data = await res.json();
+      if (data.matched) {
+        setTimeout(() => alert(`🎉 It's a Match with ${currentCandidate.name}!`), 300);
+      }
     }
-
     setTimeout(() => {
       setSwipeDirection(null);
-      setCurrentIndex((currentIndex + 1) % availableProjects.length);
+      setCurrentIndex(prev => prev + 1);
     }, 300);
   };
 
@@ -34,18 +41,16 @@ function TinderMatch({ user }) {
     if (e.key === 'ArrowRight') handleSwipe('right');
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [currentIndex]);
+  }, [currentIndex, candidates]);
 
-  if (availableProjects.length === 0) {
+  if (!currentCandidate) {
     return (
       <div className="tinder-page">
         <nav className="navbar">
-          <div className="nav-brand">
-            <h2>🚀 Innovator's Adda</h2>
-          </div>
+          <div className="nav-brand"><h2>🚀 Innovator's Adda</h2></div>
           <div className="nav-links">
             <Link to="/">Home</Link>
             <Link to="/profile">Profile</Link>
@@ -56,13 +61,12 @@ function TinderMatch({ user }) {
           </div>
         </nav>
         <div className="no-projects">
-          <h2>No more projects to show</h2>
-          <Link to="/projects">Browse all projects</Link>
+          <h2>No more people to show</h2>
+          <Link to="/search">Browse via Search</Link>
         </div>
       </div>
     );
   }
-
   return (
     <div className="tinder-page">
       <nav className="navbar">
@@ -85,12 +89,12 @@ function TinderMatch({ user }) {
           <p>Swipe right to express interest, left to pass</p>
           <div className="match-counter">
             <span>❤️ {matches.length} matches</span>
-            <span>📋 {currentIndex + 1}/{availableProjects.length}</span>
+            <span>📋 {currentIndex + 1}/{candidates.length}</span>
           </div>
         </div>
 
         <div className="tinder-card-container">
-          <div 
+          <div
             className={`tinder-card ${swipeDirection ? `swipe-${swipeDirection}` : ''}`}
           >
             <div className="card-overlay left">❌ PASS</div>
@@ -102,27 +106,16 @@ function TinderMatch({ user }) {
               </div>
 
               <div className="card-info">
-                <h2>{currentProject.title}</h2>
-                <p className="project-desc-large">{currentProject.description}</p>
-
-                <div className="author-section">
-                  <div className="author-avatar-large">👤</div>
-                  <div className="author-details">
-                    <h4>Unknown</h4>
-                  </div>
-                </div>
+                <h2>{currentCandidate.name}</h2>
+                <p className="project-desc-large">{currentCandidate.bio || 'No bio'}</p>
 
                 <div className="tech-stack-section">
-                  <h3>🧰 Tech Stack:</h3>
+                  <h3>🧰 Skills:</h3>
                   <div className="skill-badges">
-                    {(currentProject.tech_stack || []).map(tag => (
-                      <span key={tag} className="skill-badge">{tag}</span>
+                    {(currentCandidate.skills || []).map(skill => (
+                      <span key={skill} className="skill-badge">{skill}</span>
                     ))}
                   </div>
-                </div>
-
-                <div className="status-section">
-                  <span className="status-badge-large">Open</span>
                 </div>
               </div>
             </div>
@@ -130,23 +123,23 @@ function TinderMatch({ user }) {
         </div>
 
         <div className="tinder-actions">
-          <button 
+          <button
             className="btn-swipe btn-pass"
             onClick={() => handleSwipe('left')}
           >
             <span className="btn-icon">❌</span>
             <span>Pass</span>
           </button>
-          
-          <button 
+
+          <button
             className="btn-swipe btn-info"
-            onClick={() => alert('Project status: Open\n\nAuthor: Unknown')}
+            onClick={() => alert(`Candidate: ${currentCandidate.name}\n\nBio: ${currentCandidate.bio || 'No bio'}`)}
           >
             <span className="btn-icon">ℹ️</span>
             <span>Info</span>
           </button>
-          
-          <button 
+
+          <button
             className="btn-swipe btn-like"
             onClick={() => handleSwipe('right')}
           >

@@ -5,9 +5,11 @@ import pool from './config/db';
 import { authenticate } from './middleware/auth';
 import { swipe, getMatches } from './controllers/match.controller';
 import rateLimit from 'express-rate-limit';
+import cookieParser from 'cookie-parser';
 
 const app = express();
 app.use(express.json());
+app.use(cookieParser());
 const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 });
 app.use(limiter);
 

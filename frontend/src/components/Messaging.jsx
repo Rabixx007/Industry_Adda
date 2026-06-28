@@ -1,65 +1,80 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { messages, users } from '../data/dummy';
+import { io } from 'socket.io-client';
+
+let socket;
 
 function Messaging({ user }) {
-  const [conversations, setConversations] = useState(() => {
-    // Get unique conversations
-    const convos = new Map();
-    messages.forEach(msg => {
-      const otherUserId = msg.from === user.id ? msg.to : msg.from;
-      if (!convos.has(otherUserId)) {
-        convos.set(otherUserId, []);
-      }
-      convos.get(otherUserId).push(msg);
-    });
-    return Array.from(convos.entries()).map(([userId, msgs]) => ({
-      user: users.find(u => u.id === userId),
-      messages: msgs.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp)),
-      unread: msgs.filter(m => m.to === user.id && !m.read).length
-    }));
-  });
-
-  const [selectedConversation, setSelectedConversation] = useState(
-    conversations.length > 0 ? conversations[0] : null
-  );
+  const [matches, setMatches] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
+  const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    socket = io('http://localhost', {
+      path: '/socket.io',
+      withCredentials: true
+    });
+
+    socket.on('new_message', (msg) => {
+      setMessages(prev => [...prev, msg]);
+    });
+
+    socket.on('matched', ({ with: userId }) => {
+      loadMatches();
+    });
+
+    fetch('/api/match/matches', { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => {
+        const matchList = Array.isArray(data) ? data : (data.matches || []);
+        Promise.all(matchList.map(m => {
+          const otherId = m.user1_id === user.id ? m.user2_id : m.user1_id;
+          return fetch(`/api/users/${otherId}`, { credentials: 'include' })
+            .then(r => r.json());
+        })).then(users => setMatches(users));
+      });
+
+    return () => socket.disconnect();
+  }, []);
+
+  const loadMatches = () => {
+    fetch('/api/match/matches', { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => {
+        const matchList = data.matches || [];
+        Promise.all(matchList.map(m => {
+          const otherId = m.user1 === user.id ? m.user2 : m.user1;
+          return fetch(`/api/users/${otherId}`, { credentials: 'include' })
+            .then(r => r.json());
+        })).then(users => setMatches(users));
+      });
+  };
+
+  useEffect(() => {
+    if (!selectedUser) return;
+    fetch(`/api/messages/${selectedUser.id}`, { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => setMessages(data.messages || []));
+  }, [selectedUser]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const handleSendMessage = (e) => {
     e.preventDefault();
-    if (!newMessage.trim() || !selectedConversation) return;
-
-    const msg = {
-      id: `msg${Date.now()}`,
-      from: user.id,
-      to: selectedConversation.user.id,
-      content: newMessage,
-      timestamp: new Date(),
-      read: false
-    };
-
-    // Add to conversation
-    const updatedConversations = conversations.map(conv => {
-      if (conv.user.id === selectedConversation.user.id) {
-        return {
-          ...conv,
-          messages: [...conv.messages, msg]
-        };
-      }
-      return conv;
-    });
-
-    setConversations(updatedConversations);
-    setSelectedConversation(updatedConversations.find(c => c.user.id === selectedConversation.user.id));
+    if (!newMessage.trim() || !selectedUser) return;
+    socket.emit('send_message', { receiverId: selectedUser.id, content: newMessage });
+    setMessages(prev => [...prev, { sender_id: user.id, content: newMessage, created_at: new Date() }]);
     setNewMessage('');
   };
 
   return (
     <div className="messaging-page">
       <nav className="navbar">
-        <div className="nav-brand">
-          <h2>🚀 Innovator's Adda</h2>
-        </div>
+        <div className="nav-brand"><h2>🚀 Innovator's Adda</h2></div>
         <div className="nav-links">
           <Link to="/">Home</Link>
           <Link to="/profile">Profile</Link>
@@ -72,34 +87,23 @@ function Messaging({ user }) {
 
       <div className="messaging-container">
         <div className="conversations-sidebar">
-          <div className="sidebar-header">
-            <h2>💬 Messages</h2>
-          </div>
-          
+          <div className="sidebar-header"><h2>💬 Messages</h2></div>
           <div className="conversations-list">
-            {conversations.length === 0 ? (
+            {matches.length === 0 ? (
               <div className="no-conversations">
-                <p>No messages yet</p>
-                <Link to="/search">Find people to connect</Link>
+                <p>No matches yet</p>
+                <Link to="/match">Find people to match</Link>
               </div>
             ) : (
-              conversations.map(conv => (
+              matches.map(m => (
                 <div
-                  key={conv.user.id}
-                  className={`conversation-item ${selectedConversation?.user.id === conv.user.id ? 'active' : ''}`}
-                  onClick={() => setSelectedConversation(conv)}
+                  key={m.id}
+                  className={`conversation-item ${selectedUser?.id === m.id ? 'active' : ''}`}
+                  onClick={() => setSelectedUser(m)}
                 >
-                  <div className="conv-avatar">{conv.user.avatar}</div>
+                  <div className="conv-avatar">🎓</div>
                   <div className="conv-info">
-                    <div className="conv-header">
-                      <h4>{conv.user.name}</h4>
-                      {conv.unread > 0 && (
-                        <span className="unread-badge">{conv.unread}</span>
-                      )}
-                    </div>
-                    <p className="conv-preview">
-                      {conv.messages[conv.messages.length - 1].content.substring(0, 40)}...
-                    </p>
+                    <div className="conv-header"><h4>{m.name}</h4></div>
                   </div>
                 </div>
               ))
@@ -108,35 +112,27 @@ function Messaging({ user }) {
         </div>
 
         <div className="chat-area">
-          {selectedConversation ? (
+          {selectedUser ? (
             <>
               <div className="chat-header">
                 <div className="chat-user-info">
-                  <div className="chat-avatar">{selectedConversation.user.avatar}</div>
-                  <div>
-                    <h3>{selectedConversation.user.name}</h3>
-                    <p>{selectedConversation.user.institute}</p>
-                  </div>
+                  <div className="chat-avatar">🎓</div>
+                  <div><h3>{selectedUser.name}</h3></div>
                 </div>
               </div>
 
               <div className="messages-area">
-                {selectedConversation.messages.map(msg => (
-                  <div
-                    key={msg.id}
-                    className={`message ${msg.from === user.id ? 'sent' : 'received'}`}
-                  >
+                {messages.map((msg, i) => (
+                  <div key={i} className={`message ${msg.sender_id === user.id ? 'sent' : 'received'}`}>
                     <div className="message-content">
                       <p>{msg.content}</p>
                       <span className="message-time">
-                        {new Date(msg.timestamp).toLocaleTimeString([], { 
-                          hour: '2-digit', 
-                          minute: '2-digit' 
-                        })}
+                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
                     </div>
                   </div>
                 ))}
+                <div ref={messagesEndRef} />
               </div>
 
               <form onSubmit={handleSendMessage} className="message-input-area">
@@ -147,9 +143,7 @@ function Messaging({ user }) {
                   placeholder="Type a message..."
                   className="message-input"
                 />
-                <button type="submit" className="btn-send">
-                  Send 📤
-                </button>
+                <button type="submit" className="btn-send">Send 📤</button>
               </form>
             </>
           ) : (
