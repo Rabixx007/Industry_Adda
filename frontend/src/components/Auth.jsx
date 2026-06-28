@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { users, institutes } from '../data/dummy';
 
 function Auth({ onLogin }) {
   const [isLogin, setIsLogin] = useState(true);
@@ -22,79 +21,38 @@ function Auth({ onLogin }) {
     setError('');
   };
 
-  const validateEmail = (email) => {
-    // Check if email is from valid institute domain
-    const validDomains = ['iit', 'nit', 'iiit', 'bits'];
-    const domain = email.split('@')[1]?.toLowerCase() || '';
-    return validDomains.some(d => domain.includes(d)) && email.includes('.ac.in');
-  };
 
-  const handleSubmit = (e) => {
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
+    setError('');
+
     if (isLogin) {
-      // Login logic
-      const user = users.find(u => u.email === formData.email);
-      if (user) {
-        onLogin(user);
-      } else {
-        setError('Invalid credentials. Try: rahul.sharma@iitd.ac.in');
-      }
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email: formData.email, password: formData.password })
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || 'Login failed'); return; }
+      onLogin(data.user);
     } else {
-      // Registration logic
-      if (!validateEmail(formData.email)) {
-        setError('Please use your official institute email (.ac.in domain from IIT/NIT/IIIT/BITS)');
-        return;
-      }
-
-      if (!formData.name || !formData.institute || !formData.year || !formData.branch) {
-        setError('Please fill all required fields');
-        return;
-      }
-
-      // Simulate email verification
-      setEmailSent(true);
-      setTimeout(() => {
-        const newUser = {
-          id: String(users.length + 1),
-          name: formData.name,
-          email: formData.email,
-          institute: formData.institute,
-          year: formData.year,
-          branch: formData.branch,
-          skills: formData.skills.split(',').map(s => s.trim()),
-          interests: formData.interests.split(',').map(i => i.trim()),
-          bio: formData.bio,
-          looking: '',
-          projects: [],
-          endorsements: {},
-          avatar: '🎓',
-          verified: true
-        };
-        
-        // Store registered users in localStorage
-        const registeredUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-        registeredUsers.push(newUser);
-        localStorage.setItem('registeredUsers', JSON.stringify(registeredUsers));
-        
-        onLogin(newUser);
-      }, 2000);
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name: formData.name, email: formData.email, password: formData.password })
+      });
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || 'Registration failed'); return; }
+      onLogin(data.user);
     }
   };
 
-  if (emailSent) {
-    return (
-      <div className="auth-container">
-        <div className="auth-card verification-card">
-          <div className="verification-icon">✉️</div>
-          <h2>Verify Your Email</h2>
-          <p>We've sent a verification link to <strong>{formData.email}</strong></p>
-          <div className="spinner-small"></div>
-          <p className="verification-text">Verifying... (simulated for demo)</p>
-        </div>
-      </div>
-    );
-  }
+
+
+
 
   return (
     <div className="auth-container">
@@ -105,14 +63,14 @@ function Auth({ onLogin }) {
         </div>
 
         <div className="auth-tabs">
-          <button 
-            className={isLogin ? 'active' : ''} 
+          <button
+            className={isLogin ? 'active' : ''}
             onClick={() => setIsLogin(true)}
           >
             Login
           </button>
-          <button 
-            className={!isLogin ? 'active' : ''} 
+          <button
+            className={!isLogin ? 'active' : ''}
             onClick={() => setIsLogin(false)}
           >
             Register

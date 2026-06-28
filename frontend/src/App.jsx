@@ -14,22 +14,21 @@ function App() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is logged in
-    const storedUser = localStorage.getItem('currentUser');
-    if (storedUser) {
-      setCurrentUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
+    fetch('/api/users/me', { credentials: 'include' })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.id) setCurrentUser(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
   }, []);
-
   const handleLogin = (user) => {
     setCurrentUser(user);
-    localStorage.setItem('currentUser', JSON.stringify(user));
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
     setCurrentUser(null);
-    localStorage.removeItem('currentUser');
   };
 
   if (loading) {
