@@ -9,12 +9,12 @@ export const searchUsers = async (req: AuthRequest, res: Response) => {
   try {
     const result = await pool.query(
       `SELECT id, name, bio, skills, avatar FROM users
-       WHERE to_tsvector('english', name || ' ' || COALESCE(bio, '') || ' ' || COALESCE(array_to_string(skills, ' '), ''))
-       @@ plainto_tsquery('english', $1)
-       AND id != $2
-       LIMIT 20`,
-      [q, req.userId]
+   WHERE (name ILIKE $1 OR COALESCE(bio, '') ILIKE $1)
+   AND id != $2
+   LIMIT 20`,
+      [`%${q}%`, req.userId]
     );
+    res.json({ users: result.rows });
     res.json(result.rows);
   } catch {
     res.status(500).json({ error: 'Server error' });
