@@ -67,7 +67,6 @@ function Messaging({ user }) {
     e.preventDefault();
     if (!newMessage.trim() || !selectedUser) return;
     socket.emit('send_message', { receiverId: selectedUser.id, content: newMessage });
-    setMessages(prev => [...prev, { sender_id: user.id, content: newMessage, created_at: new Date() }]);
     setNewMessage('');
   };
 

@@ -71,21 +71,16 @@ function Search({ user }) {
             {results.map(u => (
               <div key={u.id} className="user-card-detailed">
                 <div className="user-card-header">
-                  <div className="user-avatar-large">{u.avatar}</div>
+                  <div className="user-avatar-large">🎓</div>
                   <div className="user-header-info">
                     <h3>{u.name}</h3>
-                    <p className="user-details">{u.branch || ''} {u.year ? `• ${u.year}` : ''}</p>
+                    <p className="user-details">{u.email}</p>
                   </div>
                 </div>
 
                 <div className="user-card-body">
                   <p className="user-bio">{u.bio || ''}</p>
 
-                  {u.looking && (
-                    <div className="looking-for">
-                      <strong>🎯 Looking for:</strong> {u.looking}
-                    </div>
-                  )}
 
                   <div className="user-skills-section">
                     <strong>Skills:</strong>
@@ -105,19 +100,12 @@ function Search({ user }) {
                     </div>
                   </div>
 
-                  <div className="user-interests-section">
-                    <strong>Interests:</strong>
-                    <div className="interests-tags">
-                      {(u.interests || []).map(interest => (
-                        <span key={interest} className="interest-tag-small">{interest}</span>
-                      ))}
-                    </div>
-                  </div>
+
                 </div>
 
                 <div className="user-card-footer">
-                  <button className="btn-connect">💬 Connect</button>
-                  <button className="btn-view-profile">View Profile</button>
+                  <button className="btn-connect" onClick={() => handleSwipe(u.id)}>💬 Connect</button>
+                  <button className="btn-view-profile" onClick={() => window.location.href = `/profile/${u.id}`}>View Profile</button>
                 </div>
               </div>
             ))}

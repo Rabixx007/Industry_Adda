@@ -12,16 +12,28 @@ import jwt from 'jsonwebtoken';
 import { authenticate } from './middleware/auth';
 import rateLimit from 'express-rate-limit';
 import { Kafka } from 'kafkajs';
+import cookieParser from 'cookie-parser';
+import cors from 'cors';
 
 
 const app = express();
 app.use(express.json());
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://localhost'],
+  credentials: true
+}));
+app.use(cookieParser());
 
 
 const limiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100 });
 app.use(limiter);
 const httpServer = createServer(app);
-const io = new Server(httpServer, { cors: { origin: '*' } });
+const io = new Server(httpServer, {
+  cors: {
+    origin: ['http://localhost:3000', 'http://localhost'],
+    credentials: true
+  }
+});
 
 // REST route
 app.get('/api/messages/:userId', authenticate, getConversation);

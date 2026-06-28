@@ -11,7 +11,7 @@ export async function getConversation(req: Request, res: Response) {
        ORDER BY created_at ASC`,
       [me, other]
     );
-    res.json(result.rows);
+    res.json({ messages: result.rows });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch messages' });
   }
