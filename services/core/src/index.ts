@@ -7,8 +7,8 @@ import authRoutes from './routes/auth.routes';
 import userRoutes from './routes/user.routes';
 import projectRoutes from './routes/project.routes';
 import searchRoutes from './routes/search.routes';
-
-
+import cookieParser from 'cookie-parser';
+import cors from 'cors';
 
 
 dotenv.config({ path: __dirname + '/../.env' });
@@ -17,6 +17,11 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(express.json());
+app.use(cookieParser());
+app.use(cors({
+  origin: 'http://localhost',  // your Nginx frontend URL
+  credentials: true            // allows cookies to be sent cross-origin
+}));
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'core' });

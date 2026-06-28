@@ -23,7 +23,16 @@ export const register = async (req: Request, res: Response) => {
             { userId: result.rows[0].id },
             process.env.JWT_SECRET!,
             { expiresIn: (process.env.JWT_EXPIRES_IN || '7d') as any }
-        ); res.status(201).json({ token, user: result.rows[0] });
+        );
+
+        res.cookie('token', token, {
+            httpOnly: true,
+            sameSite: 'strict',
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days in ms
+        });
+
+        res.status(201).json({ user: result.rows[0] });
     } catch (err) {
         res.status(500).json({ error: 'Server error' });
     }
@@ -43,17 +52,27 @@ export const login = async (req: Request, res: Response) => {
             { userId: result.rows[0].id },
             process.env.JWT_SECRET!,
             { expiresIn: (process.env.JWT_EXPIRES_IN || '7d') as any }
-        ); res.status(200).json({ token, user: { id: user.id, name: user.name, email: user.email } });
+        );
+
+        res.cookie('token', token, {
+            httpOnly: true,
+            sameSite: 'strict',
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days in ms
+        });
+
+        res.status(200).json({ user: { id: user.id, name: user.name, email: user.email } });
     } catch (err) {
         res.status(500).json({ error: 'Server error' });
     }
 };
 
 export const logout = async (req: AuthRequest, res: Response) => {
-  const token = req.headers.authorization?.split(' ')[1];
-  if (!token) { res.status(400).json({ error: 'No token' }); return; }
-  const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { exp: number };
-  const ttl = decoded.exp - Math.floor(Date.now() / 1000);
-  await redisClient.setEx(`blacklist:${token}`, ttl, 'true');
-  res.json({ message: 'Logged out' });
+    const token = req.cookies?.token;
+    if (!token) { res.status(400).json({ error: 'No token' }); return; }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { exp: number };
+    const ttl = decoded.exp - Math.floor(Date.now() / 1000);
+    await redisClient.setEx(`blacklist:${token}`, ttl, 'true');
+    res.clearCookie('token');
+    res.json({ message: 'Logged out' });
 };
