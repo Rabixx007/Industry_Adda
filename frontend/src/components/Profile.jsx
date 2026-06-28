@@ -1,19 +1,27 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { skillsList } from '../data/dummy';
 
 function Profile({ user }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editedUser, setEditedUser] = useState({ ...user });
 
-  const handleSave = () => {
-    // Save to localStorage
-    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-    const updatedUser = { ...currentUser, ...editedUser };
-    localStorage.setItem('currentUser', JSON.stringify(updatedUser));
-    setIsEditing(false);
-    window.location.reload();
+  const handleSave = async () => {
+    const res = await fetch('/api/users/me', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        name: editedUser.name,
+        bio: editedUser.bio,
+        skills: editedUser.skills,
+        github: editedUser.github,
+        linkedin: editedUser.linkedin,
+        avatar: editedUser.avatar
+      })
+    });
+    if (res.ok) setIsEditing(false);
   };
+
 
   return (
     <div className="profile-page">
@@ -33,15 +41,11 @@ function Profile({ user }) {
 
       <div className="profile-container">
         <div className="profile-header">
-          <div className="profile-avatar-large">{user.avatar}</div>
+          <div className="profile-avatar-large">🎓</div>
           <div className="profile-info">
-            <h1>{user.name} {user.verified && <span className="verified-badge">✓ Verified</span>}</h1>
-            <p className="profile-subtitle">{user.institute} • {user.branch} • {user.year}</p>
+            <h1>{user.name}</h1>
             <p className="profile-email">📧 {user.email}</p>
-            <button 
-              className="btn-edit" 
-              onClick={() => setIsEditing(!isEditing)}
-            >
+            <button className="btn-edit" onClick={() => setIsEditing(!isEditing)}>
               {isEditing ? 'Cancel' : 'Edit Profile'}
             </button>
           </div>
@@ -52,89 +56,68 @@ function Profile({ user }) {
             <h2>📝 Bio</h2>
             {isEditing ? (
               <textarea
-                value={editedUser.bio}
+                value={editedUser.bio || ''}
                 onChange={(e) => setEditedUser({ ...editedUser, bio: e.target.value })}
                 rows="4"
                 className="edit-input"
               />
             ) : (
-              <p>{user.bio}</p>
-            )}
-          </div>
-
-          <div className="profile-section">
-            <h2>🎯 Looking For</h2>
-            {isEditing ? (
-              <input
-                type="text"
-                value={editedUser.looking}
-                onChange={(e) => setEditedUser({ ...editedUser, looking: e.target.value })}
-                placeholder="What are you looking for?"
-                className="edit-input"
-              />
-            ) : (
-              <p>{user.looking || 'Not specified'}</p>
+              <p>{user.bio || 'No bio yet.'}</p>
             )}
           </div>
 
           <div className="profile-section">
             <h2>💪 Skills</h2>
             <div className="skills-grid">
-              {user.skills.map(skill => (
+              {(user.skills || []).map(skill => (
                 <div key={skill} className="skill-badge">
                   <span>{skill}</span>
-                  {user.endorsements[skill] && (
-                    <span className="endorsement-count">
-                      👍 {user.endorsements[skill]}
-                    </span>
-                  )}
                 </div>
               ))}
             </div>
             {isEditing && (
               <div className="skill-selector">
-                <p>Add more skills:</p>
-                <select 
-                  onChange={(e) => {
-                    if (!editedUser.skills.includes(e.target.value)) {
-                      setEditedUser({ 
-                        ...editedUser, 
-                        skills: [...editedUser.skills, e.target.value] 
-                      });
+                <p>Add skill (press Enter):</p>
+                <input
+                  type="text"
+                  placeholder="e.g. React"
+                  className="edit-input"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && e.target.value) {
+                      setEditedUser({ ...editedUser, skills: [...(editedUser.skills || []), e.target.value] });
+                      e.target.value = '';
                     }
                   }}
-                  className="skill-select"
-                >
-                  <option value="">Select a skill</option>
-                  {skillsList.map(skill => (
-                    <option key={skill} value={skill}>{skill}</option>
-                  ))}
-                </select>
+                />
               </div>
             )}
           </div>
 
           <div className="profile-section">
-            <h2>🎨 Interests</h2>
-            <div className="interests-list">
-              {user.interests.map(interest => (
-                <span key={interest} className="interest-tag">{interest}</span>
-              ))}
-            </div>
-          </div>
-
-          <div className="profile-section">
-            <h2>🚀 Projects ({user.projects.length})</h2>
-            {user.projects.length > 0 ? (
-              <div className="projects-list">
-                {user.projects.map(projectId => (
-                  <div key={projectId} className="project-item">
-                    Project {projectId}
-                  </div>
-                ))}
-              </div>
+            <h2>🔗 Links</h2>
+            {isEditing ? (
+              <>
+                <input
+                  type="text"
+                  value={editedUser.github || ''}
+                  onChange={(e) => setEditedUser({ ...editedUser, github: e.target.value })}
+                  placeholder="GitHub URL"
+                  className="edit-input"
+                />
+                <input
+                  type="text"
+                  value={editedUser.linkedin || ''}
+                  onChange={(e) => setEditedUser({ ...editedUser, linkedin: e.target.value })}
+                  placeholder="LinkedIn URL"
+                  className="edit-input"
+                />
+              </>
             ) : (
-              <p>No projects yet. <Link to="/projects">Start one!</Link></p>
+              <>
+                {user.github && <p>GitHub: <a href={user.github} target="_blank" rel="noreferrer">{user.github}</a></p>}
+                {user.linkedin && <p>LinkedIn: <a href={user.linkedin} target="_blank" rel="noreferrer">{user.linkedin}</a></p>}
+                {!user.github && !user.linkedin && <p>No links added yet.</p>}
+              </>
             )}
           </div>
 

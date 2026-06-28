@@ -16,16 +16,16 @@ export const createTables = async () => {
     );
   `);
   await pool.query(`
-  CREATE TABLE IF NOT EXISTS projects (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    title VARCHAR(255) NOT NULL,
-    description TEXT,
-    tech_stack TEXT[],
-    github VARCHAR(255),
-    live_url VARCHAR(255),
-    created_at TIMESTAMP DEFAULT NOW()
-  );
-`);
+    CREATE TABLE IF NOT EXISTS projects (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+      title VARCHAR(255) NOT NULL,
+      description TEXT,
+      tech_stack TEXT[],
+      github VARCHAR(255),
+      live_url VARCHAR(255),
+      created_at TIMESTAMP DEFAULT NOW()
+    );
+  `);
   console.log('Tables ready');
 };

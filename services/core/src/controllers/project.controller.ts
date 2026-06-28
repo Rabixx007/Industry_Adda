@@ -10,8 +10,9 @@ export const createProject = async (req: AuthRequest, res: Response) => {
        VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
       [req.userId, title, description, tech_stack, github, live_url]
     );
-    res.status(201).json(result.rows[0]);
-  } catch {
+    res.status(201).json({ project: result.rows[0] });
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 };
@@ -22,7 +23,7 @@ export const getMyProjects = async (req: AuthRequest, res: Response) => {
       'SELECT * FROM projects WHERE user_id=$1 ORDER BY created_at DESC',
       [req.userId]
     );
-    res.json(result.rows);
+    res.json({ projects: result.rows });
   } catch {
     res.status(500).json({ error: 'Server error' });
   }

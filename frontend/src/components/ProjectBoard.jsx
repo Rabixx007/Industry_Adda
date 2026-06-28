@@ -1,47 +1,47 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { projects, users, competitions, skillsList } from '../data/dummy';
 
 function ProjectBoard({ user }) {
+  const [projects, setProjects] = useState([]);
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newProject, setNewProject] = useState({
     title: '',
     description: '',
-    skillsNeeded: [],
-    category: '',
-    competition: ''
+    tech_stack: '',
+    github: '',
+    live_url: ''
   });
 
-  const filteredProjects = projects.filter(project => {
-    const matchesSearch = project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         project.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filter === 'all' || 
-                         (filter === 'competition' && project.competition) ||
-                         (filter === 'research' && project.category === 'Research') ||
-                         (filter === 'startup' && project.status.includes('Co-founder'));
-    return matchesSearch && matchesFilter;
-  });
+  useEffect(() => {
+    fetch('/api/projects/me', { credentials: 'include' }).then(res => res.json())
+      .then(data => setProjects(data.projects || []))
+      .catch(() => { });
+  }, []);
 
-  const handleCreateProject = (e) => {
+  const filteredProjects = projects.filter(project =>
+    project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (project.description || '').toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleCreateProject = async (e) => {
     e.preventDefault();
-    // Save project to localStorage
-    const newProj = {
-      ...newProject,
-      id: `project${projects.length + 1}`,
-      authorId: user.id,
-      likes: 0,
-      status: 'Looking for team',
-      tags: newProject.category ? [newProject.category] : []
-    };
-    
-    const savedProjects = JSON.parse(localStorage.getItem('userProjects') || '[]');
-    savedProjects.push(newProj);
-    localStorage.setItem('userProjects', JSON.stringify(savedProjects));
-    
-    setShowCreateModal(false);
-    setNewProject({ title: '', description: '', skillsNeeded: [], category: '', competition: '' });
+    const res = await fetch('/api/projects', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        ...newProject,
+        tech_stack: newProject.tech_stack.split(',').map(s => s.trim())
+      })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setProjects([...projects, data.project]);
+      setShowCreateModal(false);
+      setNewProject({ title: '', description: '', tech_stack: '', github: '', live_url: '' });
+    }
   };
 
   return (
@@ -63,7 +63,7 @@ function ProjectBoard({ user }) {
       <div className="project-board-content">
         <div className="board-header">
           <h1>📋 Project Board</h1>
-          <button 
+          <button
             className="btn-create"
             onClick={() => setShowCreateModal(true)}
           >
@@ -80,26 +80,26 @@ function ProjectBoard({ user }) {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
           <div className="filter-buttons">
-            <button 
-              className={filter === 'all' ? 'active' : ''} 
+            <button
+              className={filter === 'all' ? 'active' : ''}
               onClick={() => setFilter('all')}
             >
               All
             </button>
-            <button 
-              className={filter === 'competition' ? 'active' : ''} 
+            <button
+              className={filter === 'competition' ? 'active' : ''}
               onClick={() => setFilter('competition')}
             >
               Competitions
             </button>
-            <button 
-              className={filter === 'research' ? 'active' : ''} 
+            <button
+              className={filter === 'research' ? 'active' : ''}
               onClick={() => setFilter('research')}
             >
               Research
             </button>
-            <button 
-              className={filter === 'startup' ? 'active' : ''} 
+            <button
+              className={filter === 'startup' ? 'active' : ''}
               onClick={() => setFilter('startup')}
             >
               Startups
@@ -109,47 +109,32 @@ function ProjectBoard({ user }) {
 
         <div className="projects-grid">
           {filteredProjects.map(project => {
-            const author = users.find(u => u.id === project.authorId);
             return (
               <div key={project.id} className="project-card">
                 <div className="project-card-header">
                   <h3>{project.title}</h3>
-                  <span className="likes-badge">❤️ {project.likes}</span>
                 </div>
-                
+
                 <p className="project-description">{project.description}</p>
-                
+
                 <div className="project-meta">
                   <div className="author-info">
-                    <span className="author-avatar">{author?.avatar}</span>
-                    <span>{author?.name}</span>
-                    <span className="institute-tag">{author?.institute}</span>
+                    <span className="author-avatar">👤</span>
+                    <span>Unknown</span>
                   </div>
                 </div>
 
-                {project.competition && (
-                  <div className="competition-badge">
-                    🏆 {project.competition}
-                  </div>
-                )}
-
-                <div className="skills-needed">
-                  <strong>Skills Needed:</strong>
+                <div className="tech-stack">
+                  <strong>Tech Stack:</strong>
                   <div className="skill-tags">
-                    {project.skillsNeeded.map(skill => (
-                      <span key={skill} className="skill-tag">{skill}</span>
+                    {(project.tech_stack || []).map(tag => (
+                      <span key={tag} className="skill-tag">{tag}</span>
                     ))}
                   </div>
                 </div>
 
-                <div className="project-tags">
-                  {project.tags.map(tag => (
-                    <span key={tag} className="tag">{tag}</span>
-                  ))}
-                </div>
-
                 <div className="project-footer">
-                  <span className="status-badge">{project.status}</span>
+                  <span className="status-badge">Open</span>
                   <button className="btn-interest">💬 Express Interest</button>
                 </div>
               </div>
@@ -171,7 +156,7 @@ function ProjectBoard({ user }) {
               <h2>Create New Project</h2>
               <button onClick={() => setShowCreateModal(false)} className="modal-close">×</button>
             </div>
-            
+
             <form onSubmit={handleCreateProject} className="create-project-form">
               <div className="form-group">
                 <label>Project Title *</label>
@@ -196,60 +181,14 @@ function ProjectBoard({ user }) {
               </div>
 
               <div className="form-group">
-                <label>Category</label>
-                <select
-                  value={newProject.category}
-                  onChange={(e) => setNewProject({ ...newProject, category: e.target.value })}
-                >
-                  <option value="">Select Category</option>
-                  <option value="Web Development">Web Development</option>
-                  <option value="Mobile">Mobile</option>
-                  <option value="AI/ML">AI/ML</option>
-                  <option value="Blockchain">Blockchain</option>
-                  <option value="IoT">IoT</option>
-                  <option value="Research">Research</option>
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Competition (Optional)</label>
-                <select
-                  value={newProject.competition}
-                  onChange={(e) => setNewProject({ ...newProject, competition: e.target.value })}
-                >
-                  <option value="">None</option>
-                  {competitions.map(comp => (
-                    <option key={comp} value={comp}>{comp}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="form-group">
-                <label>Skills Needed</label>
-                <div className="skill-checkboxes">
-                  {skillsList.slice(0, 12).map(skill => (
-                    <label key={skill} className="checkbox-label">
-                      <input
-                        type="checkbox"
-                        checked={newProject.skillsNeeded.includes(skill)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setNewProject({ 
-                              ...newProject, 
-                              skillsNeeded: [...newProject.skillsNeeded, skill] 
-                            });
-                          } else {
-                            setNewProject({ 
-                              ...newProject, 
-                              skillsNeeded: newProject.skillsNeeded.filter(s => s !== skill) 
-                            });
-                          }
-                        }}
-                      />
-                      {skill}
-                    </label>
-                  ))}
-                </div>
+                <label>Tech Stack *</label>
+                <input
+                  type="text"
+                  value={newProject.tech_stack}
+                  onChange={(e) => setNewProject({ ...newProject, tech_stack: e.target.value })}
+                  placeholder="Enter technologies, separated by commas"
+                  required
+                />
               </div>
 
               <button type="submit" className="btn-submit">Create Project</button>

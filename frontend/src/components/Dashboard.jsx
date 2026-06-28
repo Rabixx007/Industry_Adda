@@ -68,16 +68,12 @@ function Dashboard({ user, onLogout }) {
                 <div key={project.id} className="project-card-mini">
                   <div className="project-header">
                     <h3>{project.title}</h3>
-                    <span className="likes">❤️ {project.likes}</span>
                   </div>
                   <p className="project-desc">{project.description}</p>
                   <div className="project-tags">
-                    {project.tags.slice(0, 3).map(tag => (
+                    {(project.tech_stack || []).slice(0, 3).map(tag => (
                       <span key={tag} className="tag">{tag}</span>
                     ))}
-                  </div>
-                  <div className="project-footer">
-                    <span className="status">{project.status}</span>
                   </div>
                 </div>
               ))}
@@ -92,12 +88,12 @@ function Dashboard({ user, onLogout }) {
             <div className="user-list">
               {suggestedUsers.map(u => (
                 <div key={u.id} className="user-card-mini">
-                  <div className="user-avatar">{u.avatar}</div>
+                  <div className="user-avatar">🎓</div>
                   <div className="user-info">
-                    <h4>{u.name} {u.verified && '✓'}</h4>
-                    <p>{u.institute}</p>
+                    <h4>{u.name}</h4>
+                    <p>{u.email}</p>
                     <div className="user-skills">
-                      {u.skills.slice(0, 3).map(skill => (
+                      {(u.skills || []).slice(0, 3).map(skill => (
                         <span key={skill} className="skill-tag">{skill}</span>
                       ))}
                     </div>
@@ -110,11 +106,11 @@ function Dashboard({ user, onLogout }) {
 
         <div className="stats-section">
           <div className="stat-card">
-            <span className="stat-number">{users.length}+</span>
+            <span className="stat-number">500+</span>
             <span className="stat-label">Active Innovators</span>
           </div>
           <div className="stat-card">
-            <span className="stat-number">{projects.length}+</span>
+            <span className="stat-number">200+</span>
             <span className="stat-label">Live Projects</span>
           </div>
           <div className="stat-card">
