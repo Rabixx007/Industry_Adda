@@ -29,9 +29,11 @@ export async function swipe(req: Request, res: Response) {
         [targetId, swiperId]
       );
       if (mutual.rows.length > 0) {
+        const [user1Id, user2Id] = swiperId < targetId ? [swiperId, targetId] : [targetId, swiperId];
+
         await pool.query(
           `INSERT INTO matches(user1_id, user2_id) VALUES($1,$2) ON CONFLICT DO NOTHING`,
-          [swiperId, targetId]
+          [user1Id, user2Id]
         );
         await producer.connect();
         await producer.send({

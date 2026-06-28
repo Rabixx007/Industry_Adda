@@ -40,3 +40,18 @@ export const getUserById = async (req: Request, res: Response) => {
     res.status(500).json({ error: 'Server error' });
   }
 };
+
+export const discoverUsers = async (req: AuthRequest, res: Response) => {
+  try {
+    const result = await pool.query(
+      `SELECT id, name, bio, skills, github, linkedin, avatar FROM users
+       WHERE id != $1
+       AND id NOT IN (SELECT target_id FROM swipes WHERE swiper_id = $1)
+       LIMIT 20`,
+      [req.userId]
+    );
+    res.json(result.rows);
+  } catch {
+    res.status(500).json({ error: 'Server error' });
+  }
+};

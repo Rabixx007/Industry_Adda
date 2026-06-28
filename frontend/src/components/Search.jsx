@@ -5,6 +5,8 @@ function Search({ user }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState([]);
   const [searchType, setSearchType] = useState('users');
+  const [requestedIds, setRequestedIds] = useState(new Set());
+
 
   useEffect(() => {
     if (searchTerm.length < 2) { setResults([]); return; }
@@ -18,13 +20,19 @@ function Search({ user }) {
   }, [searchTerm, searchType]);
 
   const handleSwipe = async (targetId) => {
-    await fetch('/api/match/swipe', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ targetId, direction: 'right' })
-    });
-    alert('Interest sent!');
+    try {
+      const res = await fetch('/api/match/swipe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ targetId, direction: 'right' })
+      });
+      if (res.ok) {
+        setRequestedIds(prev => new Set(prev).add(targetId));
+      }
+    } catch (err) {
+      console.error('Swipe failed:', err);
+    }
   };
 
   return (
@@ -104,7 +112,13 @@ function Search({ user }) {
                 </div>
 
                 <div className="user-card-footer">
-                  <button className="btn-connect" onClick={() => handleSwipe(u.id)}>💬 Connect</button>
+                  <button
+                    className="btn-connect"
+                    onClick={() => handleSwipe(u.id)}
+                    disabled={requestedIds.has(u.id)}
+                  >
+                    {requestedIds.has(u.id) ? '✓ Requested' : '💬 Connect'}
+                  </button>
                   <button className="btn-view-profile" onClick={() => window.location.href = `/profile/${u.id}`}>View Profile</button>
                 </div>
               </div>

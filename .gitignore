@@ -5,3 +5,6 @@ logs/
 *.log
 postgres_data/
 redis_data/
+cookies*.txt
+frontend/cookies*.txt
+services/*/cookies*.txt

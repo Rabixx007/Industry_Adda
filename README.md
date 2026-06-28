@@ -2,8 +2,11 @@
 ```
 Industry_Adda
 ├─ .vercelignore
+├─ cookies.txt
+├─ cookies2.txt
 ├─ docker-compose.yml
 ├─ frontend
+│  ├─ cookies.txt
 │  ├─ index.html
 │  ├─ package-lock.json
 │  ├─ package.json
@@ -30,6 +33,7 @@ Industry_Adda
 ├─ README.md
 └─ services
    ├─ core
+   │  ├─ cookies.txt
    │  ├─ Dockerfile
    │  ├─ package-lock.json
    │  ├─ package.json
