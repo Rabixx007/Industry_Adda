@@ -1,10 +1,21 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { projects, users } from '../data/dummy';
 
 function Dashboard({ user, onLogout }) {
-  const recentProjects = projects.slice(0, 4);
-  const suggestedUsers = users.filter(u => u.id !== user.id).slice(0, 3);
+  const [recentProjects, setRecentProjects] = useState([]);
+  const [suggestedUsers, setSuggestedUsers] = useState([]);
+
+  useEffect(() => {
+    fetch('/api/projects', { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => setRecentProjects((data.projects || []).slice(0, 4)))
+      .catch(() => { });
+
+    fetch('/api/search?q=&type=users', { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => setSuggestedUsers((data.users || []).filter(u => u.id !== user.id).slice(0, 3)))
+      .catch(() => { });
+  }, []);
 
   return (
     <div className="dashboard">
