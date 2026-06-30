@@ -33,6 +33,7 @@ function Feed({ user, onLogout }) {
     }
   }, [loading]);
 
+
   useEffect(() => {
     loadPosts(null);
   }, []);
@@ -50,6 +51,7 @@ function Feed({ user, onLogout }) {
     if (target) observer.observe(target);
     return () => { if (target) observer.unobserve(target); };
   }, [cursor, hasMore, loading, loadPosts]);
+
 
   const handlePost = async () => {
     if (!content.trim() && !imageFile) return;
@@ -76,6 +78,7 @@ function Feed({ user, onLogout }) {
     }
   };
 
+
   const handleLike = async (postId) => {
     setPosts(prev => prev.map(p => p.id === postId
       ? { ...p, liked_by_me: !p.liked_by_me, like_count: String(Number(p.like_count) + (p.liked_by_me ? -1 : 1)) }
@@ -86,6 +89,12 @@ function Feed({ user, onLogout }) {
     } catch (err) {
       console.error('Failed to like post:', err);
     }
+  };
+
+  const handleShare = (postId) => {
+    const url = `${window.location.origin}/feed#post-${postId}`;
+    navigator.clipboard.writeText(url);
+    alert('Post link copied!');
   };
 
   const handleDelete = async (postId) => {
@@ -181,6 +190,8 @@ function Feed({ user, onLogout }) {
               <button onClick={() => toggleComments(post.id)}>
                 💬 {post.comment_count}
               </button>
+              <button onClick={() => handleShare(post.id)}>🔗 Share</button>
+
             </div>
 
             {openComments[post.id] && (

@@ -2,11 +2,8 @@
 ```
 Industry_Adda
 ├─ .vercelignore
-├─ cookies.txt
-├─ cookies2.txt
 ├─ docker-compose.yml
 ├─ frontend
-│  ├─ cookies.txt
 │  ├─ index.html
 │  ├─ package-lock.json
 │  ├─ package.json
@@ -17,7 +14,9 @@ Industry_Adda
 │  │  │  ├─ AnimatedBg.jsx
 │  │  │  ├─ Auth.jsx
 │  │  │  ├─ Dashboard.jsx
+│  │  │  ├─ Feed.jsx
 │  │  │  ├─ Messaging.jsx
+│  │  │  ├─ Navbar.jsx
 │  │  │  ├─ Profile.jsx
 │  │  │  ├─ ProjectBoard.jsx
 │  │  │  ├─ Search.jsx
@@ -33,7 +32,6 @@ Industry_Adda
 ├─ README.md
 └─ services
    ├─ core
-   │  ├─ cookies.txt
    │  ├─ Dockerfile
    │  ├─ package-lock.json
    │  ├─ package.json
@@ -44,6 +42,7 @@ Industry_Adda
    │  │  │  └─ schema.ts
    │  │  ├─ controllers
    │  │  │  ├─ auth.controller.ts
+   │  │  │  ├─ post.controller.ts
    │  │  │  ├─ project.controller.ts
    │  │  │  ├─ search.controller.ts
    │  │  │  └─ user.controller.ts
@@ -53,6 +52,7 @@ Industry_Adda
    │  │  ├─ models
    │  │  └─ routes
    │  │     ├─ auth.routes.ts
+   │  │     ├─ post.routes.ts
    │  │     ├─ project.routes.ts
    │  │     ├─ search.routes.ts
    │  │     └─ user.routes.ts
