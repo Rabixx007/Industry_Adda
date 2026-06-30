@@ -8,3 +8,4 @@ redis_data/
 cookies*.txt
 frontend/cookies*.txt
 services/*/cookies*.txt
+services/core/uploads/*
