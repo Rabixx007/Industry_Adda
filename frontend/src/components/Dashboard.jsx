@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import Navbar from './Navbar';
+
 
 function Dashboard({ user, onLogout }) {
   const [recentProjects, setRecentProjects] = useState([]);
@@ -19,20 +21,7 @@ function Dashboard({ user, onLogout }) {
 
   return (
     <div className="dashboard">
-      <nav className="navbar">
-        <div className="nav-brand">
-          <h2>🚀 Innovator's Adda</h2>
-        </div>
-        <div className="nav-links">
-          <Link to="/">Home</Link>
-          <Link to="/profile">Profile</Link>
-          <Link to="/projects">Projects</Link>
-          <Link to="/search">Search</Link>
-          <Link to="/match">Match</Link>
-          <Link to="/messages">Messages</Link>
-          <button onClick={onLogout} className="btn-logout">Logout</button>
-        </div>
-      </nav>
+      <Navbar onLogout={onLogout} />
 
       <div className="dashboard-content">
         <div className="welcome-section">

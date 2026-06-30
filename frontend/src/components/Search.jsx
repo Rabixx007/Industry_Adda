@@ -1,24 +1,30 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import Navbar from './Navbar';
+
 
 function Search({ user }) {
   const [searchTerm, setSearchTerm] = useState('');
   const [results, setResults] = useState([]);
   const [searchType, setSearchType] = useState('users');
   const [requestedIds, setRequestedIds] = useState(new Set());
-
+  const [skillFilter, setSkillFilter] = useState('');
 
   useEffect(() => {
-    if (searchTerm.length < 2) { setResults([]); return; }
+    const hasQuery = searchTerm.length >= 2;
+    const hasSkills = skillFilter.trim().length > 0;
+    if (!hasQuery && !hasSkills) { setResults([]); return; }
+
     const delay = setTimeout(() => {
-      fetch(`/api/search?q=${searchTerm}&type=${searchType}`, { credentials: 'include' })
+      const qParam = hasQuery ? `q=${encodeURIComponent(searchTerm)}` : 'q=';
+      const skillsParam = hasSkills ? `&skills=${encodeURIComponent(skillFilter)}` : '';
+      fetch(`/api/search?${qParam}&type=${searchType}${skillsParam}`, { credentials: 'include' })
         .then(res => res.json())
         .then(data => setResults(data.users || data.projects || []))
         .catch(() => { });
     }, 300);
     return () => clearTimeout(delay);
-  }, [searchTerm, searchType]);
-
+  }, [searchTerm, searchType, skillFilter]);
   const handleSwipe = async (targetId) => {
     try {
       const res = await fetch('/api/match/swipe', {
@@ -37,19 +43,7 @@ function Search({ user }) {
 
   return (
     <div className="search-page">
-      <nav className="navbar">
-        <div className="nav-brand">
-          <h2>🚀 Innovator's Adda</h2>
-        </div>
-        <div className="nav-links">
-          <Link to="/">Home</Link>
-          <Link to="/profile">Profile</Link>
-          <Link to="/projects">Projects</Link>
-          <Link to="search" className="active">Search</Link>
-          <Link to="/match">Match</Link>
-          <Link to="/messages">Messages</Link>
-        </div>
-      </nav>
+      <Navbar />
 
       <div className="search-content">
         <div className="search-header">
@@ -65,6 +59,15 @@ function Search({ user }) {
               placeholder="Search by name, skills, interests..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="skill-filter-bar">
+            <input
+              type="text"
+              className="search-input-skill"
+              placeholder="Filter by skills (comma-separated, e.g. React, Node)"
+              value={skillFilter}
+              onChange={(e) => setSkillFilter(e.target.value)}
             />
           </div>
 

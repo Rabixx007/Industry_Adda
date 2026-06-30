@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import Navbar from './Navbar';
+
 
 function TinderMatch({ user }) {
   const [candidates, setCandidates] = useState([]);
@@ -49,17 +51,7 @@ function TinderMatch({ user }) {
   if (!currentCandidate) {
     return (
       <div className="tinder-page">
-        <nav className="navbar">
-          <div className="nav-brand"><h2>🚀 Innovator's Adda</h2></div>
-          <div className="nav-links">
-            <Link to="/">Home</Link>
-            <Link to="/profile">Profile</Link>
-            <Link to="/projects">Projects</Link>
-            <Link to="/search">Search</Link>
-            <Link to="/match" className="active">Match</Link>
-            <Link to="/messages">Messages</Link>
-          </div>
-        </nav>
+       <Navbar />
         <div className="no-projects">
           <h2>No more people to show</h2>
           <Link to="/search">Browse via Search</Link>

@@ -8,6 +8,7 @@ import Search from './components/Search';
 import Messaging from './components/Messaging';
 import TinderMatch from './components/TinderMatch';
 import AnimatedBg from './components/AnimatedBg';
+import Feed from './components/Feed';
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -52,12 +53,15 @@ function App() {
         ) : (
           <Routes>
             <Route path="/" element={<Dashboard user={currentUser} onLogout={handleLogout} />} />
-            <Route path="/profile" element={<Profile user={currentUser} />} />
+            <Route path="/profile" element={<Profile user={currentUser} onLogout={handleLogout} />} />
+            <Route path="/profile/:id" element={<Profile user={currentUser} onLogout={handleLogout} />} />
             <Route path="/projects" element={<ProjectBoard user={currentUser} />} />
             <Route path="/search" element={<Search user={currentUser} />} />
             <Route path="/messages" element={<Messaging user={currentUser} />} />
             <Route path="/match" element={<TinderMatch user={currentUser} />} />
             <Route path="*" element={<Navigate to="/" />} />
+            <Route path="/feed" element={<Feed user={currentUser} onLogout={handleLogout} />} />
+
           </Routes>
         )}
       </div>

@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import Navbar from './Navbar';
+
 
 function ProjectBoard({ user }) {
   const [projects, setProjects] = useState([]);
@@ -46,19 +48,7 @@ function ProjectBoard({ user }) {
 
   return (
     <div className="project-board">
-      <nav className="navbar">
-        <div className="nav-brand">
-          <h2>🚀 Innovator's Adda</h2>
-        </div>
-        <div className="nav-links">
-          <Link to="/">Home</Link>
-          <Link to="/profile">Profile</Link>
-          <Link to="/projects" className="active">Projects</Link>
-          <Link to="/search">Search</Link>
-          <Link to="/match">Match</Link>
-          <Link to="/messages">Messages</Link>
-        </div>
-      </nav>
+      <Navbar />
 
       <div className="project-board-content">
         <div className="board-header">

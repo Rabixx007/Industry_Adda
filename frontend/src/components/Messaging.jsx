@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { io } from 'socket.io-client';
+import Navbar from './Navbar';
 
 let socket;
 
@@ -72,17 +73,7 @@ function Messaging({ user }) {
 
   return (
     <div className="messaging-page">
-      <nav className="navbar">
-        <div className="nav-brand"><h2>🚀 Innovator's Adda</h2></div>
-        <div className="nav-links">
-          <Link to="/">Home</Link>
-          <Link to="/profile">Profile</Link>
-          <Link to="/projects">Projects</Link>
-          <Link to="/search">Search</Link>
-          <Link to="/match">Match</Link>
-          <Link to="/messages" className="active">Messages</Link>
-        </div>
-      </nav>
+     <Navbar />
 
       <div className="messaging-container">
         <div className="conversations-sidebar">

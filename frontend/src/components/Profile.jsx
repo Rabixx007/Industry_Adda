@@ -1,9 +1,33 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import Navbar from './Navbar';
 
-function Profile({ user }) {
+function Profile({ user, onLogout }) {
+  const { id } = useParams();
+  const isOwnProfile = !id || id === user.id;
+  const [viewedUser, setViewedUser] = useState(isOwnProfile ? user : null);
   const [isEditing, setIsEditing] = useState(false);
   const [editedUser, setEditedUser] = useState({ ...user });
+
+  useEffect(() => {
+    if (isOwnProfile) {
+      setViewedUser(user);
+    } else {
+      fetch(`/api/users/${id}`, { credentials: 'include' })
+        .then(res => res.json())
+        .then(data => setViewedUser(data))
+        .catch(err => console.error('Failed to load profile:', err));
+    }
+  }, [id, isOwnProfile, user]);
+
+  const handleConnect = async () => {
+    await fetch('/api/match/swipe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ targetId: id, direction: 'right' })
+    });
+  };
 
   const handleSave = async () => {
     const res = await fetch('/api/users/me', {
@@ -25,109 +49,105 @@ function Profile({ user }) {
 
   return (
     <div className="profile-page">
-      <nav className="navbar">
-        <div className="nav-brand">
-          <h2>🚀 Innovator's Adda</h2>
-        </div>
-        <div className="nav-links">
-          <Link to="/">Home</Link>
-          <Link to="/profile" className="active">Profile</Link>
-          <Link to="/projects">Projects</Link>
-          <Link to="/search">Search</Link>
-          <Link to="/match">Match</Link>
-          <Link to="/messages">Messages</Link>
-        </div>
-      </nav>
+      <Navbar onLogout={onLogout} />
+      {!viewedUser ? <p>Loading...</p> : (
+        <>
 
-      <div className="profile-container">
-        <div className="profile-header">
-          <div className="profile-avatar-large">🎓</div>
-          <div className="profile-info">
-            <h1>{user.name}</h1>
-            <p className="profile-email">📧 {user.email}</p>
-            <button className="btn-edit" onClick={() => setIsEditing(!isEditing)}>
-              {isEditing ? 'Cancel' : 'Edit Profile'}
-            </button>
-          </div>
-        </div>
-
-        <div className="profile-content">
-          <div className="profile-section">
-            <h2>📝 Bio</h2>
-            {isEditing ? (
-              <textarea
-                value={editedUser.bio || ''}
-                onChange={(e) => setEditedUser({ ...editedUser, bio: e.target.value })}
-                rows="4"
-                className="edit-input"
-              />
-            ) : (
-              <p>{user.bio || 'No bio yet.'}</p>
-            )}
-          </div>
-
-          <div className="profile-section">
-            <h2>💪 Skills</h2>
-            <div className="skills-grid">
-              {(user.skills || []).map(skill => (
-                <div key={skill} className="skill-badge">
-                  <span>{skill}</span>
-                </div>
-              ))}
-            </div>
-            {isEditing && (
-              <div className="skill-selector">
-                <p>Add skill (press Enter):</p>
-                <input
-                  type="text"
-                  placeholder="e.g. React"
-                  className="edit-input"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && e.target.value) {
-                      setEditedUser({ ...editedUser, skills: [...(editedUser.skills || []), e.target.value] });
-                      e.target.value = '';
-                    }
-                  }}
-                />
+          <div className="profile-container">
+            <div className="profile-header">
+              <div className="profile-avatar-large">🎓</div>
+              <div className="profile-info">
+                <h1>{viewedUser.name}</h1>
+                {isOwnProfile && <p className="profile-email">📧 {viewedUser.email}</p>}
+                {isOwnProfile ? (
+                  <button className="btn-edit" onClick={() => setIsEditing(!isEditing)}>
+                    {isEditing ? 'Cancel' : 'Edit Profile'}
+                  </button>
+                ) : (
+                  <button className="btn-connect" onClick={handleConnect}>💬 Connect</button>
+                )}
               </div>
-            )}
-          </div>
+            </div>
 
-          <div className="profile-section">
-            <h2>🔗 Links</h2>
-            {isEditing ? (
-              <>
-                <input
-                  type="text"
-                  value={editedUser.github || ''}
-                  onChange={(e) => setEditedUser({ ...editedUser, github: e.target.value })}
-                  placeholder="GitHub URL"
-                  className="edit-input"
-                />
-                <input
-                  type="text"
-                  value={editedUser.linkedin || ''}
-                  onChange={(e) => setEditedUser({ ...editedUser, linkedin: e.target.value })}
-                  placeholder="LinkedIn URL"
-                  className="edit-input"
-                />
-              </>
-            ) : (
-              <>
-                {user.github && <p>GitHub: <a href={user.github} target="_blank" rel="noreferrer">{user.github}</a></p>}
-                {user.linkedin && <p>LinkedIn: <a href={user.linkedin} target="_blank" rel="noreferrer">{user.linkedin}</a></p>}
-                {!user.github && !user.linkedin && <p>No links added yet.</p>}
-              </>
-            )}
-          </div>
+            <div className="profile-content">
+              <div className="profile-section">
+                <h2>📝 Bio</h2>
+                {isEditing ? (
+                  <textarea
+                    value={editedUser.bio || ''}
+                    onChange={(e) => setEditedUser({ ...editedUser, bio: e.target.value })}
+                    rows="4"
+                    className="edit-input"
+                  />
+                ) : (
+                  <p>{viewedUser.bio || 'No bio yet.'}</p>
+                )}
+              </div>
 
-          {isEditing && (
-            <button onClick={handleSave} className="btn-save">
-              💾 Save Changes
-            </button>
-          )}
-        </div>
-      </div>
+              <div className="profile-section">
+                <h2>💪 Skills</h2>
+                <div className="skills-grid">
+                  {(viewedUser.skills || []).map(skill => (
+                    <div key={skill} className="skill-badge">
+                      <span>{skill}</span>
+                    </div>
+                  ))}
+                </div>
+                {isOwnProfile && isEditing && (
+                  <div className="skill-selector">
+                    <p>Add skill (press Enter):</p>
+                    <input
+                      type="text"
+                      placeholder="e.g. React"
+                      className="edit-input"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && e.target.value) {
+                          setEditedUser({ ...editedUser, skills: [...(editedUser.skills || []), e.target.value] });
+                          e.target.value = '';
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div className="profile-section">
+                <h2>🔗 Links</h2>
+                {isEditing ? (
+                  <>
+                    <input
+                      type="text"
+                      value={editedUser.github || ''}
+                      onChange={(e) => setEditedUser({ ...editedUser, github: e.target.value })}
+                      placeholder="GitHub URL"
+                      className="edit-input"
+                    />
+                    <input
+                      type="text"
+                      value={editedUser.linkedin || ''}
+                      onChange={(e) => setEditedUser({ ...editedUser, linkedin: e.target.value })}
+                      placeholder="LinkedIn URL"
+                      className="edit-input"
+                    />
+                  </>
+                ) : (
+                  <>
+                    {viewedUser.github && <p>GitHub: <a href={viewedUser.github} target="_blank" rel="noreferrer">{viewedUser.github}</a></p>}
+                    {viewedUser.linkedin && <p>LinkedIn: <a href={viewedUser.linkedin} target="_blank" rel="noreferrer">{viewedUser.linkedin}</a></p>}
+                    {!viewedUser.github && !viewedUser.linkedin && <p>No links added yet.</p>}
+                  </>
+                )}
+              </div>
+
+              {isOwnProfile && isEditing && (
+                <button onClick={handleSave} className="btn-save">
+                  💾 Save Changes
+                </button>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
